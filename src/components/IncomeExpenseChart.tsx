@@ -22,6 +22,13 @@ const ChartContainer = styled.div`
   padding: 20px;
   margin-top: 20px;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+
+  @media (max-width: 600px) {
+    height: 220px;
+    padding: 8px;
+    margin-top: 10px;
+    border-radius: 8px;
+  }
 `;
 
 const IncomeExpenseChart: React.FC<IncomeExpenseChartProps> = ({ data }) => {

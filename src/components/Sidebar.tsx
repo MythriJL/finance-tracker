@@ -19,6 +19,13 @@ const SidebarContainer = styled.div.withConfig({
   transition: width 0.3s ease;
   min-height: 100vh;
   position: relative;
+
+  @media (max-width: 600px) {
+    width: ${(props) => (props.collapsed ? "56px" : "160px")};
+    min-width: 0;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
 `;
 
 
@@ -28,21 +35,24 @@ const ToggleButton = styled.button`
   color: ${colors.orange};
   font-size: 1.5rem;
   cursor: pointer;
-  margin: 10px auto;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  padding: 10px 20px;   // <-- same as NavItem
+  width: 100%;
+  border-radius: 6px;
 
-  &:focus {
-    outline: none;
-  }
+  &:focus,
   &:active {
     outline: none;
   }
   &:hover {
     opacity: 0.8;
+    background-color: ${colors.purple};
   }
 `;
+
+
 
 // ----------------------------
 // FIX: block collapsed from DOM
@@ -85,6 +95,13 @@ const NavItem = styled(NavLink).withConfig({
       css`
         display: none;
       `}
+  }
+
+  @media (max-width: 600px) {
+    padding: 8px 8px;
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+    border-radius: 4px;
   }
 `;
 
