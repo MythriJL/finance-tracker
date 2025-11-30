@@ -2,7 +2,8 @@
 import React from "react";
 import styled from "styled-components";
 import Sidebar from "../components/Sidebar";
-import UploadBankStatement from "../components/UploadBankStatement";
+// Updated import to point to the correct file name in components
+import UploadBankStatement from "../components/UploadBankStatement"; 
 import { colors, GlobalStyle } from "../styles/global";
 
 const Container = styled.div`
@@ -16,11 +17,6 @@ const Main = styled.main`
   background-color: ${colors.lightPurple};
 `;
 
-const SectionTitle = styled.h2`
-  color: ${colors.darkPurple};
-  margin-bottom: 20px;
-`;
-
 const UploadPage: React.FC = () => {
   return (
     <>
@@ -28,7 +24,6 @@ const UploadPage: React.FC = () => {
       <Container>
         <Sidebar />
         <Main>
-          <SectionTitle>Upload Bank Statement</SectionTitle>
           <UploadBankStatement />
         </Main>
       </Container>

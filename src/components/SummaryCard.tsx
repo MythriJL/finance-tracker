@@ -15,8 +15,7 @@ const Card = styled.div<{ bgColor?: string }>`
   padding: 20px;
   border-radius: 12px;
   min-width: 180px;
-  flex: 1;
-  margin: 10px;
+  /* FIX: Removed 'flex: 1;' and 'margin: 10px;' to allow the parent grid (CardsContainer) to control layout and spacing for proper alignment. */
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 `;
 

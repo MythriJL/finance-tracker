@@ -4,6 +4,7 @@ import Upload from "./pages/Upload";
 import Login from "./pages/Login";
 import PrivateRoute from "./components/PrivateRoute";
 import Home from "./pages/Home";
+import TransactionsPage from "./pages/Transactions"; // <-- NEW IMPORT
 
 const App: React.FC = () => (
   <Router>
@@ -21,6 +22,15 @@ const App: React.FC = () => (
         element={
           <PrivateRoute>
             <Upload />
+          </PrivateRoute>
+        }
+      />
+      {/* NEW ROUTE FOR TRANSACTIONS/CHIT FUNDS PAGE */}
+      <Route
+        path="/transactions"
+        element={
+          <PrivateRoute>
+            <TransactionsPage />
           </PrivateRoute>
         }
       />

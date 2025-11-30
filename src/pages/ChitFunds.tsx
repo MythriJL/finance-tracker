@@ -31,11 +31,11 @@ const Section = styled.div`
 `;
 
 interface Txn {
-  id: string; // Added for consistency
   amount: number;
   type: "income" | "expense";
   date: string;
   category: string; 
+  // NEW: Optional field for Chit Fund details to read the dividend
   chitFund?: {
       beatAmount: number;
       dividendReceived: number;
@@ -50,7 +50,7 @@ const Home: React.FC = () => {
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpense, setTotalExpense] = useState(0);
   const [totalChitFundPaid, setTotalChitFundPaid] = useState(0); 
-  const [totalDividendReceived, setTotalDividendReceived] = useState(0); 
+  const [totalDividendReceived, setTotalDividendReceived] = useState(0); // NEW State for Profit
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,17 +65,16 @@ const Home: React.FC = () => {
       let income = 0;
       let expense = 0;
       let chitFundPaid = 0; 
-      let dividendReceivedSum = 0;
+      let dividendReceivedSum = 0; // NEW Variable
 
       snapshot.forEach((doc) => {
         const data = doc.data();
         const txn: Txn = {
-          id: doc.id, // Capture the ID
           amount: data.amount,
           type: data.type,
           date: data.date,
           category: data.category, 
-          chitFund: data.chitFund, 
+          chitFund: data.chitFund, // Extract chitFund data if present
         };
 
         list.push(txn);
@@ -83,12 +82,10 @@ const Home: React.FC = () => {
         if (txn.type === "income") income += txn.amount;
         if (txn.type === "expense") {
             expense += txn.amount;
-            
             // Track Chit Funds Payments
             if (txn.category === "Chit Funds") {
                 chitFundPaid += txn.amount;
-                
-                // Track Dividend Received (Profit)
+                // NEW: Track Dividend Received (Profit)
                 if (txn.chitFund && txn.chitFund.dividendReceived) {
                     dividendReceivedSum += txn.chitFund.dividendReceived;
                 }
@@ -100,7 +97,7 @@ const Home: React.FC = () => {
       setTotalIncome(income);
       setTotalExpense(expense);
       setTotalChitFundPaid(chitFundPaid); 
-      setTotalDividendReceived(dividendReceivedSum); 
+      setTotalDividendReceived(dividendReceivedSum); // Set new state
       setLoading(false);
     };
 
@@ -132,12 +129,12 @@ const Home: React.FC = () => {
 
           <CardsContainer>
             <SummaryCard
-              title="Total Income (Uploaded)"
+              title="Total Income"
               value={`₹${totalIncome.toLocaleString()}`}
               bgColor={colors.purple}
             />
             <SummaryCard
-              title="Total Expense (Uploaded)"
+              title="Total Expense"
               value={`₹${totalExpense.toLocaleString()}`}
               bgColor={colors.orange}
             />
@@ -146,6 +143,7 @@ const Home: React.FC = () => {
               value={`₹${totalChitFundPaid.toLocaleString()}`} 
               bgColor={colors.darkPurple}
             />
+            {/* NEW: Chit Fund Profit Card */}
             <SummaryCard
               title="Chit Fund Profit (Total Dividend)" 
               value={`₹${totalDividendReceived.toLocaleString()}`} 
@@ -163,8 +161,8 @@ const Home: React.FC = () => {
           </Section>
           
           <Section>
-            <h2 style={{ color: colors.darkPurple }}>Tracking Note</h2>
-            <p>Your general income and expenses are tracked via bank statement uploads on the 'Upload' tab. Use the 'Chit Funds' tab to manage your dedicated chit fund payments.</p>
+            <h2 style={{ color: colors.darkPurple }}>Investment Tracking Note</h2>
+            <p>Your transactions are now categorized as **'Investments'**, **'Investment Principal'**, and **'Investments Income'**. Use the **Transactions & Chit Funds** page to view the raw data. This allows you to track investments through categorization.</p>
           </Section>
         </Main>
       </Container>

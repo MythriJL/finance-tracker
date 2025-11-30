@@ -2,7 +2,8 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import styled, { css } from "styled-components";
-import { FaHome, FaUpload, FaBars } from "react-icons/fa";
+// Import FaMoneyBill for the new link
+import { FaHome, FaUpload, FaBars, FaMoneyBill } from "react-icons/fa"; 
 import { colors } from "../styles/global";
 
 // ----------------------------
@@ -124,6 +125,13 @@ const Sidebar: React.FC = () => {
         <FaUpload />
         <span>Upload</span>
       </NavItem>
+      
+      {/* NEW: Chit Funds Manager Link */}
+      <NavItem to="/transactions" collapsed={collapsed}>
+        <FaMoneyBill />
+        <span>Chit Funds</span>
+      </NavItem>
+      
     </SidebarContainer>
   );
 };

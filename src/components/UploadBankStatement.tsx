@@ -1,5 +1,5 @@
-// src/pages/Upload.tsx
-import React, { useState, type ChangeEvent, useEffect } from "react";
+// src/components/UploadBankStatement.tsx
+import React, { useState, type ChangeEvent, useEffect, useCallback } from "react";
 import type { User } from "firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
 import styled from "styled-components";
@@ -57,11 +57,23 @@ const Table = styled.table`
     border: 1px solid #ddd;
     text-align: left;
   }
+  
+  td:nth-child(5) {
+      width: 150px; /* Give the Category select field enough room */
+  }
 
   th {
     background-color: ${colors.purple};
     color: ${colors.white};
   }
+`;
+
+const Select = styled.select`
+    padding: 6px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    width: 100%;
+    box-sizing: border-box;
 `;
 
 interface Transaction {
@@ -73,7 +85,58 @@ interface Transaction {
   source: string;
 }
 
-const Upload: React.FC<UploadProps> = ({ onUploadComplete }) => {
+// --- CATEGORY CONSTANTS ---
+// ADDED 'Investment Principal'
+const INCOME_CATEGORIES = ["Salary", "Investments Income", "Transfers", "Interest", "Rental Income", "Other Income", "Investment Principal"];
+// ADDED 'Chit Funds' and 'Investment Principal'
+const EXPENSE_CATEGORIES = ["Food & Dining", "Shopping", "Utilities", "Housing/Rent", "Automotive/Fuel", "Transfers", "Cash Withdrawal", "Taxes", "Insurance/Medical", "Investments", "Chit Funds", "Investment Principal", "Other Expenses"];
+
+const ALL_CATEGORIES = {
+    income: INCOME_CATEGORIES,
+    expense: EXPENSE_CATEGORIES,
+};
+// -------------------------
+
+/**
+ * Categorizes a transaction based on its description and type.
+ * @param description The transaction description.
+ * @param type "income" or "expense".
+ * @returns The determined category string.
+ */
+const categorizeTransaction = (description: string, type: "income" | "expense"): string => {
+  const desc = description.toLowerCase();
+
+  if (type === "income") {
+    // NEW: FD Redemption (Principal Return) logic
+    if (/(auto_redeem|princl|fd credit|fixed deposit|maturity)/.test(desc) && !/(interest)/.test(desc)) return "Investment Principal";
+    if (/(interest|int|fd)/.test(desc)) return "Interest"; // Catches INTEREST CREDIT
+    if (/(salary|sal|payroll|credit|employer|wages)/.test(desc)) return "Salary";
+    if (/(rent|rental)/.test(desc)) return "Rental Income";
+    if (/(transfer|imps|neft|rtgs|p2p|paytm|gpay|upi|phonepe|a\/c transfer)/.test(desc)) return "Transfers";
+    return "Other Income";
+  } else { // type === "expense"
+    // NEW: FD Creation (Principal Outflow) logic
+    if (/(fd through|fixed deposit|invest|purchase)/.test(desc) && /fd/i.test(desc)) return "Investment Principal";
+    
+    // MSIL (Chit Funds) logic
+    if (/\bmsil\b|chit fund/i.test(desc)) return "Chit Funds"; 
+
+    if (/(rent|emi|loan|mortgage|home)/.test(desc)) return "Housing/Rent";
+    if (/(fuel|petrol|gas|esso|shell|hpcl|bpcl|oil)/.test(desc)) return "Automotive/Fuel";
+    if (/(swiggy|zomato|ubereats|kfc|mcd|cafe|restaurant|food|dining)/.test(desc)) return "Food & Dining";
+    if (/(amazon|flipkart|myntra|shop|online purchase|e-com|starbucks|subscriptions|netflix|spotify)/.test(desc)) return "Shopping";
+    if (/(electricity|water|utility|internet|mobile|phone|bill|jio|airtel|gas bill)/.test(desc)) return "Utilities";
+    if (/(atm|cash|withdrawal)/.test(desc)) return "Cash Withdrawal";
+    if (/(transfer|imps|neft|rtgs|p2p|paytm|gpay|upi|phonepe|a\/c transfer)/.test(desc)) return "Transfers";
+    if (/(tax|gst|tds|itax)/.test(desc)) return "Taxes";
+    if (/(insurance|lic|health care|hospital|medical)/.test(desc)) return "Insurance/Medical";
+    if (/(sip|mutual fund|investment|equity|elss)/.test(desc)) return "Investments";
+    return "Other Expenses";
+  }
+};
+
+
+const UploadBankStatement: React.FC<UploadProps> = ({ onUploadComplete }) => {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -94,6 +157,18 @@ const Upload: React.FC<UploadProps> = ({ onUploadComplete }) => {
     setShowPreview(false);
     setMessage("");
   };
+  
+  // Handler for category change in the preview table
+  const handleCategoryChange = useCallback((index: number, newCategory: string) => {
+    setParsedData(prevData => {
+        const newData = [...prevData];
+        if (newData[index]) {
+            newData[index] = { ...newData[index], category: newCategory };
+        }
+        return newData;
+    });
+  }, []);
+
 
   // Helper: parse ArrayBuffer to transactions
   const parseArrayBufferToTransactions = (buffer: ArrayBuffer) => {
@@ -216,7 +291,12 @@ const Upload: React.FC<UploadProps> = ({ onUploadComplete }) => {
         }
         const type: "income" | "expense" = credit > 0 ? "income" : "expense";
         const amount = credit > 0 ? credit : debit;
-        return { date, description, amount, type, category: type === "income" ? "Salary" : "Other", source: "Bank Statement" };
+        
+        // --- CATEGORIZATION LOGIC ADDED HERE ---
+        const category = categorizeTransaction(description, type);
+        // --- END CATEGORIZATION LOGIC ---
+
+        return { date, description, amount, type, category, source: "Bank Statement" }; 
       })
       .filter((t) => t.amount > 0);
 
@@ -264,6 +344,8 @@ const Upload: React.FC<UploadProps> = ({ onUploadComplete }) => {
 
     let success = 0, skipped = 0;
     for (const t of parsedData) {
+      // NOTE: For simple bank statement upload, we don't need the complex chit fund fields, 
+      // but we will keep the data structure consistent for now.
       const q = query(transactionsRef, where("date", "==", t.date), where("description", "==", t.description), where("amount", "==", t.amount));
       const existing = await getDocs(q);
       if (existing.empty) {
@@ -304,10 +386,10 @@ const Upload: React.FC<UploadProps> = ({ onUploadComplete }) => {
 
           {showPreview && parsedData.length > 0 && (
             <Card>
-              <h3>Preview ({parsedData.length} transactions)</h3>
+              <h3>Review and Edit Categories ({parsedData.length} transactions)</h3>
               <Table>
                 <thead>
-                  <tr><th>Date</th><th>Description</th><th>Amount</th><th>Type</th></tr>
+                  <tr><th>Date</th><th>Description</th><th>Amount</th><th>Type</th><th>Category</th></tr>
                 </thead>
                 <tbody>
                   {parsedData.slice(0, 20).map((t, i) => (
@@ -316,6 +398,17 @@ const Upload: React.FC<UploadProps> = ({ onUploadComplete }) => {
                       <td>{t.description}</td>
                       <td>₹{t.amount.toFixed(2)}</td>
                       <td>{t.type}</td>
+                      <td>
+                          {/* Interactive Category Selection */}
+                          <Select 
+                              value={t.category} 
+                              onChange={(e) => handleCategoryChange(i, e.target.value)}
+                          >
+                              {ALL_CATEGORIES[t.type].map(cat => (
+                                  <option key={cat} value={cat}>{cat}</option>
+                              ))}
+                          </Select>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -328,4 +421,4 @@ const Upload: React.FC<UploadProps> = ({ onUploadComplete }) => {
   );
 };
 
-export default Upload;
+export default UploadBankStatement;
